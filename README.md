@@ -1,41 +1,43 @@
-# Parallel Image Processing Project
+## Project Overview
 
-## Overview
-This project demonstrates parallel image processing using Java multithreading. It converts a color image to grayscale by distributing the workload across multiple threads, with each thread processing a separate portion of the image. The implementation leverages Java's native threading capabilities to achieve significant performance improvements over sequential processing.
+This project demonstrates parallel image processing using Java's multithreading capabilities. The program converts a colored image into grayscale by dividing the workload among multiple threads, utilizing Java's Thread class.
 
-## Project Description
-The application takes an input image and divides it into horizontal chunks based on the number of available processor cores. Each chunk is then processed independently by a dedicated worker thread. The worker threads simultaneously convert their assigned image portions from color to grayscale using the standard luminance formula (0.299R + 0.587G + 0.114B). Once all threads complete their work, the resulting grayscale image is saved to disk.
+## Features
 
-## Key Features
-- **Dynamic Thread Allocation**: Automatically detects the number of available processor cores and creates an optimal number of worker threads.
-- **Efficient Workload Distribution**: Divides the image into equal chunks for balanced processing across all threads.
-- **Parallel Processing**: Performs pixel-by-pixel image conversion simultaneously across multiple threads.
-- **Minimal Synchronization Overhead**: Design minimizes thread communication and synchronization points.
+- Loads an image from a specified file path.
+- Uses multiple threads to process different parts of the image simultaneously.
+- Converts the image into grayscale using a weighted formula.
+- Saves the processed image to a new file.
 
-## Advantages of Parallel Processing
-- **Improved Performance**: Significantly faster processing times compared to sequential approaches, especially for large images.
-- **Scalability**: Automatically scales with the number of available CPU cores.
-- **Resource Utilization**: Maximizes CPU utilization by keeping all cores busy during processing.
-- **Real-world Application**: Demonstrates practical application of parallel programming concepts in image processing.
+## How It Works
 
-## Implementation Details
-The project is implemented using Java's built-in threading capabilities:
-- The main thread divides the image into chunks and creates worker threads
-- Each worker thread processes its assigned image portion independently
-- The BufferedImage object is shared among threads but accessed in a way that prevents race conditions
-- Thread synchronization is achieved using join() to ensure all processing completes before saving
+1. The program loads an image from disk.
+2. It determines the number of available processor cores and creates an equivalent number of worker threads.
+3. The image is divided into horizontal chunks, with each thread assigned to process a portion.
+4. Each thread converts its portion of the image into grayscale.
+5. Once all threads finish processing, the final image is saved as output.jpg.
 
-## Performance Considerations
-- The performance gain is most noticeable for large image files
-- The optimal number of threads is typically equal to the number of available processor cores
-- For very small images, the overhead of creating and managing threads may outweigh the benefits
+## Prerequisites
 
-## Future Enhancements
-- Implement additional image processing filters
-- Add benchmarking to measure performance improvement
-- Explore alternative parallelization strategies like thread pools or fork/join framework
-- Implement a user interface for selecting images and processing options
+- Java Development Kit (JDK) installed.
+- An image file (image.jpg) placed in the specified directory.
 
-## Requirements
-- Java Development Kit (JDK) 8 or higher
-- An input image file (JPG, PNG, etc.)
+## Image Processing Details
+
+- The program extracts the red, green, and blue (RGB) components of each pixel.
+- A grayscale value is computed using the formula:
+
+
+    gray = 0.299 * red + 0.587 * green + 0.114 * blue
+
+
+- The new grayscale value is applied uniformly across all RGB channels.
+
+## Example Output
+
+Before: A colored image (image.jpg) After: A grayscale image (output.jpg)
+
+## Performance Benefits
+
+- Parallel processing significantly speeds up the grayscale conversion by utilizing multiple CPU cores.
+- Dividing the image into chunks ensures efficient workload distribution.
