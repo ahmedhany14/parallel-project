@@ -2,23 +2,12 @@ package imageprocessor;
 
 import java.awt.image.BufferedImage;
 
-/**
- * Filter that applies a sepia tone effect to an image using parallel processing
- */
 public class SepiaFilter extends AbstractParallelFilter {
     
-    /**
-     * Constructor with default number of threads
-     */
     public SepiaFilter() {
         super();
     }
     
-    /**
-     * Constructor with custom number of threads
-     * 
-     * @param numThreads Number of threads to use
-     */
     public SepiaFilter(int numThreads) {
         super(numThreads);
     }
@@ -37,7 +26,6 @@ public class SepiaFilter extends AbstractParallelFilter {
                 int green = (rgb >> 8) & 0xff;
                 int blue = rgb & 0xff;
                 
-                // Sepia formula
                 int newRed = (int) Math.min(255, (red * 0.393 + green * 0.769 + blue * 0.189));
                 int newGreen = (int) Math.min(255, (red * 0.349 + green * 0.686 + blue * 0.168));
                 int newBlue = (int) Math.min(255, (red * 0.272 + green * 0.534 + blue * 0.131));

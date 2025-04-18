@@ -29,7 +29,6 @@ public class ImageProcessorApp extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
-        // Create top panel with file and filter selection
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JButton loadButton = new JButton("Load Image");
         filterComboBox = new JComboBox<>(new String[]{"Grayscale", "Blur", "Sharpen", "Edge Detection", "Sepia"});
@@ -37,14 +36,12 @@ public class ImageProcessorApp extends JFrame {
         topPanel.add(new JLabel("Filter:"));
         topPanel.add(filterComboBox);
         
-        // Create a dedicated panel for thread control with a border
         JPanel threadPanel = new JPanel();
         threadPanel.setBorder(BorderFactory.createTitledBorder(
             BorderFactory.createEtchedBorder(), "Parallelism Control", 
             TitledBorder.LEFT, TitledBorder.TOP, 
             new Font("Dialog", Font.BOLD, 12), Color.BLUE));
         
-        // Thread count spinner with better visibility
         JLabel threadLabel = new JLabel("Number of Threads:");
         int defaultThreads = Runtime.getRuntime().availableProcessors();
         SpinnerNumberModel threadModel = new SpinnerNumberModel(
@@ -54,21 +51,17 @@ public class ImageProcessorApp extends JFrame {
         JFormattedTextField tf = ((JSpinner.DefaultEditor) editor).getTextField();
         tf.setColumns(3);
         
-        // Add information about system processors
         JLabel cpuInfoLabel = new JLabel("(System has " + defaultThreads + " processors)");
         cpuInfoLabel.setFont(new Font("Dialog", Font.ITALIC, 10));
         
-        // Add checkbox for comparing with sequential processing
         compareSequentialCheckbox = new JCheckBox("Compare with Sequential Processing");
         compareSequentialCheckbox.setSelected(true);
-        compareSequentialCheckbox.setToolTipText("Run both parallel and sequential processing and compare performance");
+        compareSequentialCheckbox.setToolTipText("Compare multi-threaded with single-threaded processing");
         
-        // Process button
         processButton = new JButton("Process Image");
         processButton.setEnabled(false);
         processButton.setFont(new Font("Dialog", Font.BOLD, 12));
         
-        // Organize thread panel components
         threadPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
         threadPanel.add(threadLabel);
         threadPanel.add(threadCountSpinner);
@@ -76,23 +69,19 @@ public class ImageProcessorApp extends JFrame {
         threadPanel.add(compareSequentialCheckbox);
         threadPanel.add(processButton);
         
-        // Progress bar
         progressBar = new JProgressBar(0, 100);
         progressBar.setStringPainted(true);
         progressBar.setVisible(false);
         
-        // Add panels to top section
         JPanel controlPanel = new JPanel(new BorderLayout());
         controlPanel.add(topPanel, BorderLayout.NORTH);
         controlPanel.add(threadPanel, BorderLayout.CENTER);
         controlPanel.add(progressBar, BorderLayout.SOUTH);
 
-        // Image display area
         imageLabel = new JLabel();
         imageLabel.setHorizontalAlignment(JLabel.CENTER);
         JScrollPane scrollPane = new JScrollPane(imageLabel);
         
-        // Parallelism info panel with better styling
         JPanel infoPanel = new JPanel(new BorderLayout());
         infoPanel.setBorder(BorderFactory.createTitledBorder(
             BorderFactory.createEtchedBorder(), "Processing Performance Information", 
@@ -109,16 +98,13 @@ public class ImageProcessorApp extends JFrame {
         JScrollPane infoScrollPane = new JScrollPane(parallelInfoArea);
         infoPanel.add(infoScrollPane, BorderLayout.CENTER);
 
-        // Add components to frame
         add(controlPanel, BorderLayout.NORTH);
         add(scrollPane, BorderLayout.CENTER);
         add(infoPanel, BorderLayout.SOUTH);
 
-        // Event listeners
         loadButton.addActionListener(this::loadImage);
         processButton.addActionListener(this::processImage);
 
-        // Set frame properties
         setSize(1000, 800);
         setLocationRelativeTo(null);
         setVisible(true);
@@ -138,7 +124,6 @@ public class ImageProcessorApp extends JFrame {
                 displayImage(originalImage);
                 processButton.setEnabled(true);
                 
-                // Reset info area
                 parallelInfoArea.setText("Ready to process. Image size: " + 
                                         originalImage.getWidth() + "x" + originalImage.getHeight() + " pixels");
             } catch (IOException ex) {
@@ -156,7 +141,6 @@ public class ImageProcessorApp extends JFrame {
         int threadCount = (Integer) threadCountSpinner.getValue();
         boolean compareWithSequential = compareSequentialCheckbox.isSelected();
         
-        // Disable UI during processing
         processButton.setEnabled(false);
         threadCountSpinner.setEnabled(false);
         compareSequentialCheckbox.setEnabled(false);
@@ -165,28 +149,26 @@ public class ImageProcessorApp extends JFrame {
         
         parallelInfoArea.setText("Processing...");
         
-        // Process the image in a background thread to keep UI responsive
         SwingWorker<ProcessingResult, Integer> worker = new SwingWorker<ProcessingResult, Integer>() {
             @Override
             protected ProcessingResult doInBackground() {
+                // Process with multiple threads
                 ImageFilter parallelFilter = createParallelFilter(filterName, threadCount);
                 
-                // Run parallel processing and measure time
                 publish(0);
                 long parallelStartTime = System.currentTimeMillis();
                 BufferedImage parallelResult = parallelFilter.applyFilter(originalImage, progress -> publish(progress));
                 long parallelEndTime = System.currentTimeMillis();
                 double parallelTime = (parallelEndTime - parallelStartTime) / 1000.0;
                 
-                // Run sequential processing if requested
                 double sequentialTime = 0.0;
                 if (compareWithSequential) {
-                    publish(0); // Reset progress
-                    SequentialImageFilter sequentialFilter = createSequentialFilter(filterName);
+                    // Process with a single thread for "sequential" comparison
+                    ImageFilter sequentialFilter = createParallelFilter(filterName, 1);
                     
-                    publish(-1); // Special flag to indicate sequential processing
+                    publish(-1);
                     long sequentialStartTime = System.currentTimeMillis();
-                    sequentialFilter.applyFilter(originalImage, progress -> publish(-progress - 1)); // Negative to distinguish from parallel
+                    sequentialFilter.applyFilter(originalImage, progress -> publish(-progress - 1));
                     long sequentialEndTime = System.currentTimeMillis();
                     sequentialTime = (sequentialEndTime - sequentialStartTime) / 1000.0;
                 }
@@ -196,18 +178,15 @@ public class ImageProcessorApp extends JFrame {
             
             @Override
             protected void process(java.util.List<Integer> chunks) {
-                // Update progress bar
                 if (!chunks.isEmpty()) {
                     int latestProgress = chunks.get(chunks.size() - 1);
                     if (latestProgress >= 0) {
                         progressBar.setValue(latestProgress);
                         progressBar.setString("Parallel: " + latestProgress + "%");
                     } else if (latestProgress == -1) {
-                        // Starting sequential processing
                         progressBar.setValue(0);
                         progressBar.setString("Sequential: 0%");
                     } else {
-                        // Sequential progress (convert back to positive)
                         int sequentialProgress = -latestProgress - 1;
                         progressBar.setValue(sequentialProgress);
                         progressBar.setString("Sequential: " + sequentialProgress + "%");
@@ -224,7 +203,6 @@ public class ImageProcessorApp extends JFrame {
                     
                     DecimalFormat df = new DecimalFormat("#.###");
                     
-                    // Calculate and display performance metrics
                     int imagePixels = originalImage.getWidth() * originalImage.getHeight();
                     double pixelsPerSecond = imagePixels / result.parallelTime;
                     double pixelsPerThread = pixelsPerSecond / threadCount;
@@ -247,7 +225,7 @@ public class ImageProcessorApp extends JFrame {
                         double speedup = result.sequentialTime / result.parallelTime;
                         double efficiency = (speedup / threadCount) * 100;
                         
-                        info.append("\nSEQUENTIAL PROCESSING:\n");
+                        info.append("\nSEQUENTIAL PROCESSING (1 THREAD):\n");
                         info.append("- Processing Time: ").append(df.format(result.sequentialTime)).append(" seconds\n");
                         info.append("- Performance: ").append(String.format("%,.0f", sequentialPixelsPerSecond))
                             .append(" pixels/second\n");
@@ -257,7 +235,6 @@ public class ImageProcessorApp extends JFrame {
                         info.append("- Parallelism Efficiency: ").append(String.format("%.1f", efficiency)).append("%\n");
                         info.append("  (Ideal efficiency would be 100%)\n");
                         
-                        // Add interpretation of results
                         if (efficiency > 90) {
                             info.append("- Excellent parallelism: This filter benefits greatly from multi-threading.");
                         } else if (efficiency > 70) {
@@ -271,10 +248,9 @@ public class ImageProcessorApp extends JFrame {
                     
                     parallelInfoArea.setText(info.toString());
                     
-                    // Show completion message
                     String message = "Image processing completed in " + df.format(result.parallelTime) + " seconds!";
                     if (result.compareWithSequential) {
-                        message += "\nSequential processing took " + df.format(result.sequentialTime) + " seconds.";
+                        message += "\nSingle-threaded processing took " + df.format(result.sequentialTime) + " seconds.";
                         message += "\nSpeedup: " + df.format(result.sequentialTime / result.parallelTime) + "x";
                     }
                     JOptionPane.showMessageDialog(ImageProcessorApp.this, 
@@ -297,9 +273,6 @@ public class ImageProcessorApp extends JFrame {
         worker.execute();
     }
     
-    /**
-     * Creates a parallel filter based on the selected filter type and thread count
-     */
     private ImageFilter createParallelFilter(String filterName, int threadCount) {
         switch (filterName) {
             case "Grayscale":
@@ -317,29 +290,8 @@ public class ImageProcessorApp extends JFrame {
         }
     }
     
-    /**
-     * Creates a sequential filter based on the selected filter type
-     */
-    private SequentialImageFilter createSequentialFilter(String filterName) {
-        switch (filterName) {
-            case "Grayscale":
-                return new SequentialGrayscaleFilter();
-            case "Blur":
-                return new SequentialBlurFilter();
-            case "Sharpen":
-                return new SequentialSharpenFilter();
-            case "Edge Detection":
-                return new SequentialEdgeDetectionFilter();
-            case "Sepia":
-                return new SequentialSepiaFilter();
-            default:
-                return new SequentialGrayscaleFilter();
-        }
-    }
-    
     private void displayImage(BufferedImage img) {
         if (img != null) {
-            // Scale image for display if needed
             BufferedImage displayImg = img;
             if (img.getWidth() > MAX_IMAGE_WIDTH || img.getHeight() > MAX_IMAGE_HEIGHT) {
                 displayImg = scaleImage(img, MAX_IMAGE_WIDTH, MAX_IMAGE_HEIGHT);
@@ -353,7 +305,6 @@ public class ImageProcessorApp extends JFrame {
         int width = original.getWidth();
         int height = original.getHeight();
         
-        // Calculate scaling factor
         double widthRatio = (double) maxWidth / width;
         double heightRatio = (double) maxHeight / height;
         double ratio = Math.min(widthRatio, heightRatio);
@@ -361,7 +312,6 @@ public class ImageProcessorApp extends JFrame {
         int newWidth = (int) (width * ratio);
         int newHeight = (int) (height * ratio);
         
-        // Create scaled image
         BufferedImage scaledImage = new BufferedImage(newWidth, newHeight, original.getType());
         Graphics2D g = scaledImage.createGraphics();
         g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
@@ -371,9 +321,6 @@ public class ImageProcessorApp extends JFrame {
         return scaledImage;
     }
     
-    /**
-     * Class to store the results of image processing
-     */
     private static class ProcessingResult {
         final BufferedImage processedImage;
         final double parallelTime;
@@ -389,14 +336,12 @@ public class ImageProcessorApp extends JFrame {
     }
 
     public static void main(String[] args) {
-        // Set the look and feel to the system default
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (Exception e) {
             e.printStackTrace();
         }
         
-        // Start the application
         SwingUtilities.invokeLater(() -> new ImageProcessorApp());
     }
 }

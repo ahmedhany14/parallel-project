@@ -2,46 +2,24 @@ package imageprocessor;
 
 import java.awt.image.BufferedImage;
 
-/**
- * Filter that applies a Gaussian blur to an image using parallel processing
- */
 public class BlurFilter extends AbstractParallelFilter {
     
     private final int radius;
     
-    /**
-     * Constructor with default radius and thread count
-     */
     public BlurFilter() {
         this(3);
     }
     
-    /**
-     * Constructor with custom radius and default thread count
-     * 
-     * @param radius Blur radius
-     */
     public BlurFilter(int radius) {
         super();
         this.radius = radius;
     }
     
-    /**
-     * Constructor with default radius and custom thread count
-     * 
-     * @param numThreads Number of threads to use
-     */
     public BlurFilter(int numThreads, boolean useThreadCount) {
         super(numThreads);
         this.radius = 3;
     }
     
-    /**
-     * Constructor with custom radius and custom thread count
-     * 
-     * @param radius Blur radius
-     * @param numThreads Number of threads to use
-     */
     public BlurFilter(int radius, int numThreads) {
         super(numThreads);
         this.radius = radius;
@@ -53,16 +31,13 @@ public class BlurFilter extends AbstractParallelFilter {
         int width = inputImage.getWidth();
         int height = inputImage.getHeight();
         
-        // Generate gaussian kernel
         float[] kernel = createGaussianKernel(radius);
         
-        // Apply kernel to each pixel in the chunk
         for (int y = startY; y < endY; y++) {
             for (int x = 0; x < width; x++) {
                 float sumR = 0, sumG = 0, sumB = 0;
                 float sumWeight = 0;
                 
-                // Apply convolution with kernel
                 for (int ky = -radius; ky <= radius; ky++) {
                     for (int kx = -radius; kx <= radius; kx++) {
                         int px = Math.min(Math.max(x + kx, 0), width - 1);
@@ -78,7 +53,6 @@ public class BlurFilter extends AbstractParallelFilter {
                     }
                 }
                 
-                // Normalize and set the new pixel value
                 int r = Math.min(Math.max((int) (sumR / sumWeight), 0), 255);
                 int g = Math.min(Math.max((int) (sumG / sumWeight), 0), 255);
                 int b = Math.min(Math.max((int) (sumB / sumWeight), 0), 255);
@@ -91,9 +65,6 @@ public class BlurFilter extends AbstractParallelFilter {
         }
     }
     
-    /**
-     * Creates a 1D Gaussian kernel with specified radius
-     */
     private float[] createGaussianKernel(int radius) {
         float[] kernel = new float[2 * radius + 1];
         float sigma = radius / 3.0f;
@@ -108,7 +79,6 @@ public class BlurFilter extends AbstractParallelFilter {
             total += kernel[index];
         }
         
-        // Normalize the kernel
         for (int i = 0; i < kernel.length; i++) {
             kernel[i] /= total;
         }
